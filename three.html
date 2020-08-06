@@ -76,10 +76,7 @@
         <div id="overview">
             Free to explore area by years<br><br>
             Pick a Year : <select id="select_year"></select>
-            <div id="gender_div" style="right:0;float:right; top:0">
-                <div class="male"></div>
-                <div class="female"></div>
-            </div>
+           
             <svg width=600 height=600>
             </svg>
         </div>
@@ -87,7 +84,7 @@
     </div>
     <script>
         async function init() {
-            const data = await d3.csv('https://localhost:1234/master.csv');
+            const data = await d3.csv('master.csv');
             d3.select("#select_year").on('change', loadSearch);
             var width = 900;
             var height = 500;

@@ -95,7 +95,7 @@
   </div>
   <script>
     async function init() {
-      const data = await d3.csv('https://localhost:1234/master.csv');
+      const data = await d3.csv('master.csv');
       tdiv = d3.select("body").append("div")
         .classed("tt", true);
       var width = 900;
