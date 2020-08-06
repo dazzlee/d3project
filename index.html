@@ -1,0 +1,202 @@
+<html>
+
+<head>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+
+  <style>
+    body {
+      background-color: white;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .content {
+      max-width: 1000px;
+      margin: auto;
+    }
+    ul {
+      list-style-type: none;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background-color: #1f1f1f;
+      margin-bottom: 30px;
+    }
+
+    li {
+      float: left;
+      border-right: 1px solid #fff;
+      cursor: pointer;
+    }
+
+    li p {
+      display: block;
+      color: white;
+      text-align: center;
+      padding: 10px 16px;
+      margin: 0px;
+      text-decoration: none;
+    }
+    li p:hover {
+      background-color: #111;
+    }
+    svg text {
+      font-family: 'Roboto', sans-serif;
+    }
+
+
+
+    .tt {
+      position: absolute;
+      background: white;
+      visibility: hidden;
+      padding: 10px;
+      z-index: 10;
+      overflow-x: wrap;
+      width: 150;
+      border: 3px black;
+      border-radius: 20px 20px;
+      text-align: center;
+      opacity: 80%;
+    }
+  </style>
+</head>
+
+<body onload='init()'>
+  <div class="content">
+    <div id="titleSection">
+      <h1>Suicides in United States by years</h1>
+      <p>Suicide is the act of intentionally causing one's own death. Mental disorders—including depression, bipolar
+        disorder, autism, schizophrenia, personality disorders, anxiety disorders, physical disorders such as chronic
+        fatigue syndrome, and substance abuse—including alcoholism and the use of and withdrawal from
+        benzodiazepines—are risk factors.Some suicides are impulsive acts due to stress, such as from financial
+        difficulties, relationship problems such as breakups, or bullying</p>
+    </div>
+    <div id="nav">
+      <ul>
+        <li>
+          <p class="navItem" id="navItemOne">One</p>
+        </li>
+        <li>
+          <p class="navItem" id="navItemTwo"><a href='two.html'>Two</a></p>
+        </li>
+        <li>
+          <p class="navItem" id="navItemThree"><a href='three.html'>Three</a></p>
+        </li>
+      </ul>
+    </div>
+    <div id="overview">
+      The below chart shows number the Suicides by people in the United States aged between 35-54 and who are males.
+      <br>
+      <br>Annotation shown for the max number of suicides in the year 2010
+      <svg width=600 height=600>
+      </svg>
+    </div>
+
+  </div>
+  <script>
+    async function init() {
+      const data = await d3.csv('https://localhost:1234/master.csv');
+      tdiv = d3.select("body").append("div")
+        .classed("tt", true);
+      var width = 900;
+      var height = 500;
+      var margin = 50;
+      maxSuicides = Math.max(...data.map(key => (parseInt(key.suicides_no))));
+      data1 = data.filter(f=>f.age==='35-54 years' && f.sex==='male');
+      const x = d3.scaleBand().domain(getData(data, 'year')).range([0, width]);
+      const y = d3.scaleLinear().domain([0, Math.max.apply(Math, getData(data, 'suicides_no').map(Number))]).range([height, 0]);
+      var color = d3.scaleOrdinal().domain([0,1]).range(['slateblue'])
+
+      const Countries = getData(data, 'country')
+
+      d3.select('svg')
+        .attr('width', width + 2 * margin)
+        .attr('height', height + 2 * margin)
+        .append('g')
+        .attr('transform', 'translate(' + margin + ',' + margin + ')')
+        .selectAll('g')
+        .data(data1)
+        .join('g')
+        .append('rect')
+        .attr('x', function (d, i) { return x(d.year); })
+        .attr('y', function (d) { return y(d.suicides_no); })
+        .attr('fill', color)
+        .attr('width', x.bandwidth() - 3)
+        .attr('height', function (d) { return height - y(d.suicides_no); })
+        .on('mousemove', function (d, i) {
+          tooltip(this, d, i);
+        })
+        .on('mouseout', function (d, i) {
+          hide(this, d, i);
+        });
+
+      var xAxis = d3.axisBottom(x).ticks(1);
+      var yAxis = d3.axisLeft(y).ticks(10);
+
+      d3.select('svg')
+        .append("g")
+        .attr("transform", "translate(" + margin + "," + (margin) + ")")
+        .call(yAxis);
+
+      d3.select('svg')
+        .append("g")
+        .attr("transform", "translate(" + margin + "," + (height + margin) + ")")
+        .call(xAxis);
+
+      annotation(maxSuicides, 2010, 790, 550)
+
+    function getData(data, column) {
+      return Array.from(new Set(data.map(function (record) {
+        return record[column]
+      })));
+    }
+
+    function annotation(maxSuicides, year, x, y) {
+      margin = 50
+      color = "black";
+
+      d3.select('svg')
+        .append("line")
+        .attr("x1", 3 * margin)
+        .attr("x2", x)
+        .attr("y1", margin)
+        .attr("y2", margin)
+        .attr("stroke", color)
+        .attr("stroke-dasharray", "4");
+
+      d3.select('svg')
+        .append("line")
+        .attr("x1", x)
+        .attr("x2", x)
+        .attr("y1", y)
+        .attr("y2", margin)
+        .attr("stroke", color)
+        .attr("stroke-dasharray", "4");
+
+      d3.select('svg')
+        .append("text")
+        .classed('annotation', true)
+        .attr("x", 90)
+        .attr("y", 25)
+        .text("Max number of suicides: " + maxSuicides + ' for year ' + year)
+        .style("font-size", "12px");
+    }
+
+    function tooltip(that, d, i) {
+      tdiv.style("visibility", "visible");
+      tdiv.style("top", (d3.event.pageY - 30) + "px");
+      tdiv.style("left", (d3.event.pageX + 30) + "px");
+      tdiv.html("<b>Year: </b>" + d.year + "<br><b>Count: </b>" + d.suicides_no + "<br><b>Generation: </b>"+ d.generation + "<br");
+      d3.select(that).transition().duration('80').attr('opacity', '.70');
+    }
+
+    function hide(that, d, i) {
+      tdiv.style("visibility", "hidden");
+      d3.select(that).transition().duration('80').attr('opacity', '1')
+    }
+    }
+
+  </script>
+</body>
+
+</html>

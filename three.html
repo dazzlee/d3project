@@ -1,0 +1,175 @@
+<html>
+
+<head>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+
+    <style>
+        body {
+            background-color: white;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        .content {
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #1f1f1f;
+            margin-bottom: 30px;
+        }
+
+        li {
+            float: left;
+            border-right: 1px solid #fff;
+            cursor: pointer;
+        }
+
+        li p {
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 10px 16px;
+            margin: 0px;
+            text-decoration: none;
+        }
+
+        li p:hover {
+            background-color: #111;
+        }
+
+        svg text {
+            font-family: 'Roboto', sans-serif;
+        }
+    </style>
+</head>
+
+<body onload='init()'>
+    <div class="content">
+        <div id="titleSection">
+            <h1>Suicides in United States by years</h1>
+            <p>Suicide is the act of intentionally causing one's own death. Mental disorders—including depression,
+                bipolar
+                disorder, autism, schizophrenia, personality disorders, anxiety disorders, physical disorders such as
+                chronic
+                fatigue syndrome, and substance abuse—including alcoholism and the use of and withdrawal from
+                benzodiazepines—are risk factors.Some suicides are impulsive acts due to stress, such as from financial
+                difficulties, relationship problems such as breakups, or bullying</p>
+        </div>
+        <div id="nav">
+            <ul>
+                <li>
+                    <p class="navItem" id="navItemOne"><a href='index.html'>One</a></p>
+                </li>
+                <li>
+                    <p class="navItem" id="navItemTwo"><a href='two.html'>Two</a></p>
+                </li>
+                <li>
+                    <p class="navItem" id="navItemThree">Three</p>
+                </li>
+            </ul>
+        </div>
+        <div id="overview">
+            Free to explore area by years<br><br>
+            Pick a Year : <select id="select_year"></select>
+            <div id="gender_div" style="right:0;float:right; top:0">
+                <div class="male"></div>
+                <div class="female"></div>
+            </div>
+            <svg width=600 height=600>
+            </svg>
+        </div>
+
+    </div>
+    <script>
+        async function init() {
+            const data = await d3.csv('https://localhost:1234/master.csv');
+            d3.select("#select_year").on('change', loadSearch);
+            var width = 900;
+            var height = 500;
+            var margin = 50;
+            var year = 1985
+            years = getData(data, 'year').map(Number);
+            populateDropdownYear(years);
+            yearIndex = 0;
+            const x = d3.scaleBand().domain(getData(data, 'age')).range([0, width]);
+            const y = d3.scaleLinear().domain([0, Math.max.apply(Math, getData(data, 'suicides_no').map(Number))]).range([height, 0]);
+            var color = d3.scaleOrdinal().domain([0, 1]).range(['slateblue'])
+
+            const Countries = getData(data, 'country')
+            display(year)
+            function display(year) {
+                data1 = data.filter(f => f.year == year && f.sex === 'male');
+                data2 = data.filter(f => f.year == year && f.sex === 'female');
+                d3.select('svg')
+                    .attr('width', width + 2 * margin)
+                    .attr('height', height + 2 * margin)
+                    .append('g')
+                    .attr('transform', 'translate(' + margin + ',' + margin + ')')
+                    .selectAll('g')
+                    .data(data1)
+                    .join('g')
+                    .append('rect')
+                    .attr('x', function (d, i) { return x(d.age); })
+                    .attr('y', function (d) { return y(d.suicides_no); })
+                    .attr('fill', color)
+                    .attr('width', (x.bandwidth() / 2) - 3)
+                    .attr('height', function (d) { return height - y(d.suicides_no); })
+
+                d3.select('svg')
+                    .attr('width', width + 2 * margin)
+                    .attr('height', height + 2 * margin)
+                    .append('g')
+                    .attr('transform', 'translate(' + margin + ',' + margin + ')')
+                    .selectAll('g')
+                    .data(data2)
+                    .join('g')
+                    .append('rect')
+                    .attr('x', function (d, i) { return x(d.age) + 75; })
+                    .attr('y', function (d) { return y(d.suicides_no); })
+                    .attr('fill', 'pink')
+                    .attr('width', (x.bandwidth() / 2) - 3)
+                    .attr('height', function (d) { return height - y(d.suicides_no); })
+
+                var xAxis = d3.axisBottom(x).ticks(1);
+                var yAxis = d3.axisLeft(y).ticks(10);
+
+                d3.select('svg')
+                    .append("g")
+                    .attr("transform", "translate(" + margin + "," + (margin) + ")")
+                    .call(yAxis);
+
+                d3.select('svg')
+                    .append("g")
+                    .attr("transform", "translate(" + margin + "," + (height + margin) + ")")
+                    .call(xAxis);
+            }
+            function getData(data, column) {
+                return Array.from(new Set(data.map(function (record) {
+                    return record[column]
+                })));
+            }
+
+            function loadSearch(e) {
+                var e = document.getElementById("select_year");
+                display(e.options[e.selectedIndex].text);
+            }
+            function populateDropdownYear(years) {
+                var sel = document.getElementById('select_year');
+                for (var i = 0; i < years.length; i++) {
+                    var opt = document.createElement('option');
+                    opt.innerHTML = years[i];
+                    opt.value = years[i];
+                    sel.appendChild(opt);
+                }
+            }
+        }
+
+    </script>
+</body>
+
+</html>
